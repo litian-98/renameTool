@@ -14,6 +14,11 @@ class RenameAction : AnAction() {
         val virtualFile = e.getData(CommonDataKeys.VIRTUAL_FILE) ?: return
 
         log.info("RenameAction触发成功!")
+
+        var projectPath = project.basePath
+        log.info("projectPath:$projectPath")
+        MappingUtils.createMappingFile(projectPath)
+
         RenameService().processVirtualFile(virtualFile, project)
     }
 

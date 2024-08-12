@@ -12,10 +12,12 @@ import com.intellij.refactoring.RefactoringSettings
 import com.intellij.refactoring.rename.RenameProcessor
 import com.jetbrains.lang.dart.DartLanguage
 import com.jetbrains.lang.dart.psi.DartVarAccessDeclaration
+import com.litian.plugin.MappingUtils
 import io.github.serpro69.kfaker.lorem.faker
 import org.jetbrains.kotlin.descriptors.isOverridableOrOverrides
 import org.jetbrains.kotlin.idea.KotlinLanguage
 import org.jetbrains.kotlin.idea.caches.resolve.resolveToDescriptorIfAny
+import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtNamedFunction
 import org.jetbrains.kotlin.psi.KtParameter
 import org.jetbrains.kotlin.psi.KtProperty
@@ -64,6 +66,7 @@ class RenameService {
         log.info("开始处理 ${psiFile.virtualFile.path}")
         val variableSet = HashSet<String>()
 
+
         //找出所有需要修改的变量名和方法
         filterPsiElementByFile(psiFile)
             .forEach {
@@ -85,7 +88,11 @@ class RenameService {
     ) {
         val name = (psiElement as PsiNamedElement).name
 
-        val newVariable = generateNewVariable(variableSet).also { variableSet.add(it) }
+        val newVariable = if (psiElement is KtClass){
+            generateNewClassName()
+        }else{
+            generateNewVariable(variableSet).also { variableSet.add(it) }
+        }
 
         log.info("重命名map: ${psiFile.virtualFile.path} ==> $name : $newVariable".trimIndent())
 
@@ -120,7 +127,7 @@ class RenameService {
     private fun handleKotlinLanguage(psiFile: PsiFile): Array<PsiElement> {
         return PsiTreeUtil.collectElements(psiFile) { element ->
             when (element) {
-                is KtProperty, is KtParameter -> true
+                is KtProperty, is KtParameter,is KtClass -> true
                 is KtNamedFunction -> {
                     val functionDescriptor = element.resolveToDescriptorIfAny(BodyResolveMode.FULL)
                     functionDescriptor?.isOverridableOrOverrides == false
@@ -141,7 +148,7 @@ class RenameService {
         val newVariable = toCamelCase(
             arrayListOf(
                 faker.adjective.positive(),
-                toCamelCase(githubFaker.food().ingredient().split(" "))
+                toCamelCase(githubFaker.color().name().split(" "))
             )
         )
 
@@ -152,5 +159,28 @@ class RenameService {
         }
     }
 
+    private fun generateNewClassName(): String {
+        fun toCamelCase(words: List<String>): String {
+            return words.mapIndexed { _, word ->
+                word.replaceFirstChar { it.titlecase(Locale.getDefault()) }
+            }.joinToString("")
+        }
+
+        var newName = toCamelCase(
+            arrayListOf(
+                faker.adjective.positive(),
+                toCamelCase(githubFaker.color().name().split(" "))
+            )
+        )
+
+        val content = MappingUtils.readContent()
+        if (content.contains(newName,true)){
+            newName = generateNewClassName()
+        }
+
+        return newName.also {
+            MappingUtils.saveClassName(newName)
+        }
+    }
 
 }
