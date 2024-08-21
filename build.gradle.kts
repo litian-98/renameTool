@@ -1,7 +1,6 @@
 plugins {
     //平台支持必选
     id("org.jetbrains.intellij.platform") version "2.0.0"
-
     //java 支持
     id("java")
     //kotlin 支持
@@ -12,11 +11,10 @@ plugins {
 dependencies {
     //运行环境配置
     intellijPlatform {
-        // 这里可以更改
-        local("/Applications/Android Studio.app")
+        intellijIdeaCommunity("2024.2")
         bundledPlugin("com.intellij.java")
         bundledPlugin("org.jetbrains.kotlin")
-        plugin("Dart:241.18808")
+        plugin("Dart:242.20629")
         instrumentationTools()
     }
 
@@ -31,6 +29,14 @@ dependencies {
 intellijPlatform {
     projectName = project.name
     autoReload = true
+
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "111"
+            untilBuild = "999.*"
+        }
+    }
+
 }
 
 //仓库,一般情况下不用配置
@@ -42,4 +48,6 @@ repositories {
     }
 }
 
-
+kotlin {
+    jvmToolchain(17)
+}
